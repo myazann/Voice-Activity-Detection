@@ -185,9 +185,9 @@ class SoundDetector():
 
         
         if torch.sum(preds) > 0:
-            print("Konuşma var!")
+            print("People are speaking!")
         else:
-            print("Konuşma yok!")
+            print("Nobody is speaking!")
         
         return torch.sum(preds)
 
