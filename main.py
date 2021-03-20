@@ -8,6 +8,17 @@ model = SoundDetector("cpu")
 
 ## Accepts path, numpy array or torch tensor as argument.
 
+model.predict("bus_chatter.wav")  
+
+
+## Listens the environment from the computer mic and predicts if there is human voice or not. 
+## First argument determines the length of the period, and second argument is for total listening seconds. 
+
+
+model.listen(5, 60)
+
+
+## Testing the performance of classes.
 
 path = "AudioSet/Non_Speech"
 len_dir = len(os.listdir(path))
@@ -39,14 +50,3 @@ for song in os.listdir(path):
         
 sp_acc = true/len_dir
 print("Speech Accuracy:",sp_acc,"Non_Speech Accuracy:",nonsp_acc)
-
-
-## Listens the environment from the computer mic and predicts if there is human voice or not. 
-## First argument determines the length of the period, and second argument is for total listening seconds. 
-
-
-model.listen(5, 60)
-
-
-
-
