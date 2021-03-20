@@ -74,16 +74,16 @@ def preprocess_audio(data):
 
 
 
-class BidirectionalGRU(Module):
+class BidirectionalGRU(nn.Module):
 
     def __init__(self, rnn_dim, hidden_size, dropout, batch_first):
         super(BidirectionalGRU, self).__init__()
 
-        self.BiGRU = GRU(
+        self.BiGRU = nn.GRU(
             input_size=rnn_dim, hidden_size=hidden_size,
             num_layers=1, batch_first=batch_first, bidirectional=True)
-        self.layer_norm = LayerNorm(rnn_dim)
-        self.dropout = Dropout(dropout)
+        self.layer_norm = nn.LayerNorm(rnn_dim)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         x = self.layer_norm(x)
@@ -91,63 +91,66 @@ class BidirectionalGRU(Module):
         x, _ = self.BiGRU(x)
         x = self.dropout(x)
         return x
-    
-    
+
+
 class SoundDetectorModel(Module):   
     def __init__(self):
         super(SoundDetectorModel, self).__init__()
           
-
         self.sound_detector_model =  Sequential(
-            Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
-            ReLU(inplace=True),
-            Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            ReLU(inplace=True),
-            MaxPool2d(kernel_size=2, stride=2),
-            Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            ReLU(inplace=True),
-            Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            ReLU(inplace=True),
-            MaxPool2d(kernel_size=2, stride=2),
-            Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            ReLU(inplace=True),
-            MaxPool2d(kernel_size=2, stride=2),
+            self.ConvBlock(1, 32, 3, 1, 1),
+            self.ConvBlock(32, 32, 3, 1, 1, True),
+            self.ConvBlock(32, 64, 3, 1, 1),
+            self.ConvBlock(64, 64, 3, 1, 1, True),
+            self.ConvBlock(64, 128, 3, 1, 1, True),
             Dropout(0.5),
-            Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
-            ReLU(inplace=True),
-            Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
-            ReLU(inplace=True),
-            MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+            self.ConvBlock(128, 256, 3, 1, 1),
+            self.ConvBlock(256, 256, 3, 1, 1, True),
             Dropout(0.5),
-            Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
-            ReLU(inplace=True),
-            Conv2d(512, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
-            ReLU(inplace=True),
-            MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+            self.ConvBlock(256, 512, 3, 1, 1),
+            self.ConvBlock(512, 1024, 3, 1, 1, True),
             Dropout(0.5)
             )
         
-        self.classifier = Sequential(
+        self.classifier = nn.Sequential(
             BidirectionalGRU(1024, 1024, 0.25, True),
             Flatten(),
-            Linear(32768, 4096), 
-            ReLU(inplace=True),
-            LayerNorm(4096),
-            Linear(4096, 2048), 
-            ReLU(inplace=True),
-            LayerNorm(2048),
-            Linear(2048, 256), 
-            ReLU(inplace=True),
-            LayerNorm(256),
+            self.LinearBlock(32768, 4096),
+            self.LinearBlock(4096, 2048),
+            self.LinearBlock(2048, 256),
+
             Linear(256, 2)
-        )        
-  
+        )
+
+    def ConvBlock(self, input_channels, output_channels, kernel_size=3, stride=1, padding = 1, maxpool = False):
+
+      if maxpool:
+        return Sequential(
+          Conv2d(input_channels, output_channels, kernel_size, stride, padding),
+          ReLU(inplace=True),
+          MaxPool2d(kernel_size=2, stride=2)
+          )
+      else:
+        return Sequential(
+          Conv2d(input_channels, output_channels, kernel_size, stride, padding),
+          ReLU(inplace=True)
+        )
+
+    def LinearBlock(self, input_channels, output_channels):
+
+      return Sequential(
+            Linear(input_channels, output_channels), 
+            ReLU(inplace=True),
+            LayerNorm(output_channels)
+      )
+          
+
     def forward(self, x):
 
         x = self.sound_detector_model(x)
         
         sizes = x.size()
-        x = x.view(sizes[0], sizes[2] * sizes[3], sizes[1])  # (batch, feature, time)
+        x = x.view(sizes[0], sizes[2] * sizes[3], sizes[1])
         ##x = x.transpose(1, 2)
         x = self.classifier(x)
 
