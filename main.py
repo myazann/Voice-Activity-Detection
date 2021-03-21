@@ -1,9 +1,9 @@
 
-from SoundDetector import *
+from VoiceDetector import *
 
 
 
-model = SoundDetector("cpu")
+model = VoiceDetector("cpu")
 
 
 ## Accepts path, numpy array or torch tensor as argument.
