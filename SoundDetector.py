@@ -13,16 +13,16 @@ from torch.nn import *
 import torch.nn.functional as F
 
 
-class BidirectionalGRU(nn.Module):
+class BidirectionalGRU(Module):
 
     def __init__(self, rnn_dim, hidden_size, dropout, batch_first):
         super(BidirectionalGRU, self).__init__()
 
-        self.BiGRU = nn.GRU(
+        self.BiGRU = GRU(
             input_size=rnn_dim, hidden_size=hidden_size,
             num_layers=1, batch_first=batch_first, bidirectional=True)
-        self.layer_norm = nn.LayerNorm(rnn_dim)
-        self.dropout = nn.Dropout(dropout)
+        self.layer_norm = LayerNorm(rnn_dim)
+        self.dropout = Dropout(dropout)
 
     def forward(self, x):
         x = self.layer_norm(x)
@@ -51,7 +51,7 @@ class SoundDetectorModel(Module):
             Dropout(0.5)
             )
         
-        self.classifier = nn.Sequential(
+        self.classifier = Sequential(
             BidirectionalGRU(1024, 1024, 0.25, True),
             Flatten(),
             self.LinearBlock(32768, 4096),
