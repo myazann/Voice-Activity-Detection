@@ -158,7 +158,7 @@ class SoundDetector():
             audio = np.array(data)
 
             if len(audio.shape) > 2:
-                raise ValueError("Ses dizisinin boyutu en fazla 2 olabilir!")
+                raise ValueError("Dimension cannot be bigger than 2!")
             elif len(audio.shape) == 2:
                 if audio.shape[0] == 2:
                     torch.reshape((audio.shape[1], audio.shape[0]))
@@ -166,6 +166,9 @@ class SoundDetector():
                     audio = np.mean(audio.numpy(), axis = 1)
                 else:
                     audio = np.mean(audio, axis = 1)
+                    
+        else:
+            raise TypeError("Only path, numpy array of torch tensors are allowed!")
 
         aud_tensor = torch.tensor(np.array(audio))
 
