@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import warnings
 warnings.filterwarnings("ignore")
 import torch
@@ -93,11 +90,6 @@ class SoundDetectorModel(Module):
 
         return x
                    
-    """
-    def forward(self, x):
-        x = self.sound_detector_model(x)
-        return x        
-    """
 
 ## Main class for model functions.
 class SoundDetector():
@@ -113,9 +105,9 @@ class SoundDetector():
         self.detector.eval()
         
  
-    def predict(self, path):
+    def predict(self, audio):
 
-        song = self.preprocess_audio(path)
+        song = self.preprocess_audio(audio)
         
         with torch.no_grad():
             out = self.detector(song)
@@ -168,7 +160,7 @@ class SoundDetector():
                     audio = np.mean(audio, axis = 1)
                     
         else:
-            raise TypeError("Only path, numpy array of torch tensors are allowed!")
+            raise TypeError("Only path, numpy array, or torch tensors are allowed!")
 
         aud_tensor = torch.tensor(np.array(audio))
 
