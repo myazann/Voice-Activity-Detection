@@ -13,7 +13,6 @@ from torch.nn import *
 import torch.nn.functional as F
 
 
-
 class BidirectionalGRU(nn.Module):
 
     def __init__(self, rnn_dim, hidden_size, dropout, batch_first):
@@ -58,7 +57,6 @@ class SoundDetectorModel(Module):
             self.LinearBlock(32768, 4096),
             self.LinearBlock(4096, 2048),
             self.LinearBlock(2048, 256),
-
             Linear(256, 2)
         )
 
@@ -84,7 +82,6 @@ class SoundDetectorModel(Module):
             LayerNorm(output_channels)
       )
           
-
     def forward(self, x):
 
         x = self.sound_detector_model(x)
@@ -94,7 +91,6 @@ class SoundDetectorModel(Module):
         ##x = x.transpose(1, 2)
         x = self.classifier(x)
 
-        
         return x
                    
     """
@@ -148,10 +144,6 @@ class SoundDetector():
 
 
     def preprocess_audio(self, data):
-
-        if isinstance(data, bytes):
-
-            data = np.frombuffer(data)
 
         if isinstance(data, str):
 
