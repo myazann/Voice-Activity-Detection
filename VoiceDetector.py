@@ -29,11 +29,11 @@ class BidirectionalGRU(Module):
         return x
 
 
-class SoundDetectorModel(Module):   
+class VoiceDetectorModel(Module):   
     def __init__(self):
-        super(SoundDetectorModel, self).__init__()
+        super(VoiceDetectorModel, self).__init__()
           
-        self.sound_detector_model =  Sequential(
+        self.voice_detector_model =  Sequential(
             self.ConvBlock(1, 32, 3, 1, 1),
             self.ConvBlock(32, 32, 3, 1, 1, True),
             self.ConvBlock(32, 64, 3, 1, 1),
@@ -81,7 +81,7 @@ class SoundDetectorModel(Module):
           
     def forward(self, x):
 
-        x = self.sound_detector_model(x)
+        x = self.voice_detector_model(x)
         
         sizes = x.size()
         x = x.view(sizes[0], sizes[2] * sizes[3], sizes[1])
@@ -92,14 +92,14 @@ class SoundDetectorModel(Module):
                    
 
 ## Main class for model functions.
-class SoundDetector():
+class VoiceDetector():
     
     def __init__(self, device):
         
         self.device = device
-        self.detector = SoundDetectorModel()
+        self.detector = VoiceDetectorModel()
         
-        self.detector = torch.load('SoundDetector.pt', map_location=torch.device(device))
+        self.detector = torch.load('VoiceDetector.pt', map_location=torch.device(device))
         
         self.detector = self.detector.to(device)
         self.detector.eval()
