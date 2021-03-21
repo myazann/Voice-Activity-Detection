@@ -13,66 +13,6 @@ from torch.nn import *
 import torch.nn.functional as F
 
 
-def preprocess_audio(data):
-    
-    if isinstance(data, bytes):
-        
-        data = np.frombuffer(data)
-    
-    if isinstance(data, str):
-    
-        audio = AudioSegment.from_file(data)
-        audio = audio.set_frame_rate(16000)
-        audio = audio.set_channels(1)
-        audio = audio.get_array_of_samples()
-        
-        
-    elif isinstance(data, np.ndarray) or isinstance(data, torch.Tensor):
-        
-        audio = np.array(data)
-        
-        if len(audio.shape) > 2:
-            raise ValueError("Ses dizisinin boyutu en fazla 2 olabilir!")
-        elif len(audio.shape) == 2:
-            if audio.shape[0] == 2:
-                torch.reshape((audio.shape[1], audio.shape[0]))
-            if isinstance(data, torch.Tensor):
-                audio = np.mean(audio.numpy(), axis = 1)
-            else:
-                audio = np.mean(audio, axis = 1)
-            
-    aud_tensor = torch.tensor(np.array(audio))
-    
-    if aud_tensor.shape[0] < 160000:
-        pad_shape = 160000 - aud_tensor.shape[0]
-        pad_tensor = torch.zeros(pad_shape)
-        aud_tensor = torch.cat((aud_tensor, pad_tensor))
-        
-    elif aud_tensor.shape[0] > 160000:
-        splitted_tensor = list(torch.split(aud_tensor, 160000))
-        if splitted_tensor[-1].shape[0] < 160000:
-            pad_shape = 160000 - splitted_tensor[-1].shape[0]
-            if aud_tensor.dtype == torch.int16:
-                pad_tensor = torch.zeros(pad_shape, dtype = torch.int16)
-            else:
-                pad_tensor = torch.zeros(pad_shape)
-            splitted_tensor[-1] = torch.cat((splitted_tensor[-1], pad_tensor)) 
-        aud_tensor = torch.stack(splitted_tensor)
-     
-    
-    if aud_tensor.dtype == torch.int16:
-        aud_tensor = torch.tensor(aud_tensor, dtype = torch.float)
-        
-    aud_tensor = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_mels=128, n_fft = 2048)(aud_tensor)
-    
-    if len(aud_tensor.shape) == 2:
-        aud_tensor = aud_tensor[None, None, ...]
-    elif len(aud_tensor.shape) == 3:
-        aud_tensor = aud_tensor[:,None,...]
-    
-    return aud_tensor
-
-
 
 class BidirectionalGRU(nn.Module):
 
@@ -179,7 +119,7 @@ class SoundDetector():
  
     def predict(self, path):
 
-        song = preprocess_audio(path)
+        song = self.preprocess_audio(path)
         
         with torch.no_grad():
             out = self.detector(song)
@@ -207,5 +147,61 @@ class SoundDetector():
             elapsed_time += seconds
 
 
+    def preprocess_audio(self, data):
+
+        if isinstance(data, bytes):
+
+            data = np.frombuffer(data)
+
+        if isinstance(data, str):
+
+            audio = AudioSegment.from_file(data)
+            audio = audio.set_frame_rate(16000)
+            audio = audio.set_channels(1)
+            audio = audio.get_array_of_samples()
 
 
+        elif isinstance(data, np.ndarray) or isinstance(data, torch.Tensor):
+
+            audio = np.array(data)
+
+            if len(audio.shape) > 2:
+                raise ValueError("Ses dizisinin boyutu en fazla 2 olabilir!")
+            elif len(audio.shape) == 2:
+                if audio.shape[0] == 2:
+                    torch.reshape((audio.shape[1], audio.shape[0]))
+                if isinstance(data, torch.Tensor):
+                    audio = np.mean(audio.numpy(), axis = 1)
+                else:
+                    audio = np.mean(audio, axis = 1)
+
+        aud_tensor = torch.tensor(np.array(audio))
+
+        if aud_tensor.shape[0] < 160000:
+            pad_shape = 160000 - aud_tensor.shape[0]
+            pad_tensor = torch.zeros(pad_shape)
+            aud_tensor = torch.cat((aud_tensor, pad_tensor))
+
+        elif aud_tensor.shape[0] > 160000:
+            splitted_tensor = list(torch.split(aud_tensor, 160000))
+            if splitted_tensor[-1].shape[0] < 160000:
+                pad_shape = 160000 - splitted_tensor[-1].shape[0]
+                if aud_tensor.dtype == torch.int16:
+                    pad_tensor = torch.zeros(pad_shape, dtype = torch.int16)
+                else:
+                    pad_tensor = torch.zeros(pad_shape)
+                splitted_tensor[-1] = torch.cat((splitted_tensor[-1], pad_tensor)) 
+            aud_tensor = torch.stack(splitted_tensor)
+
+
+        if aud_tensor.dtype == torch.int16:
+            aud_tensor = torch.tensor(aud_tensor, dtype = torch.float)
+
+        aud_tensor = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_mels=128, n_fft = 2048)(aud_tensor)
+
+        if len(aud_tensor.shape) == 2:
+            aud_tensor = aud_tensor[None, None, ...]
+        elif len(aud_tensor.shape) == 3:
+            aud_tensor = aud_tensor[:,None,...]
+
+        return aud_tensor
